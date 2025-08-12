@@ -1,240 +1,249 @@
-# GitHub Actions Integration Testing Demo
+# GitHub Actions Integration Testing Demo (Simulated)
 
-This repository demonstrates best practices for setting up GitHub Actions with manual triggers, environment protection, and integration testing.
+This repository demonstrates how to set up GitHub Actions with manual triggers and simulated integration tests that don't require real external services or credentials.
 
 ## 🎯 Purpose
 
 Show how to:
-- Configure manual workflow triggers
+- Configure manual workflow triggers with `workflow_dispatch`
 - Use GitHub Environments for approval workflows
-- Run integration tests selectively
-- Protect sensitive credentials
+- Run simulated integration tests without real credentials
+- Test integration patterns without actual external dependencies
+
+## ✨ Key Features
+
+- **No Real Credentials Required** - All tests use mock services
+- **Configurable Failure Simulation** - Test your error handling
+- **Manual Test Triggers** - Run specific test suites on demand
+- **Environment Protection** - Demo approval workflows
+- **PR Integration** - Test pull requests with manual triggers
 
 ## 🚀 Quick Start
 
-### 1. Fork/Create This Repository
+### 1. Fork/Clone This Repository
 
 ```bash
-# Clone the template
-git clone <your-repo-url>
-cd <your-repo>
-
-# Initialize with the provided structure
-cp -r /tmp/.github .
-cp /tmp/CLAUDE.md .
-cp /tmp/README_DEMO.md README.md
+git clone https://github.com/digitaldrywood/github-integration-testing-demo
+cd github-integration-testing-demo
 ```
 
-### 2. Configure GitHub Environments
+### 2. Configure GitHub Environments (Optional)
+
+For demonstrating approval workflows:
 
 1. Go to **Settings** → **Environments**
 2. Create `integration-testing` environment
-3. Add protection rules:
-   - ✅ Required reviewers (add your username)
-   - 🕐 Wait timer (optional, e.g., 5 minutes)
-   - 🌿 Deployment branches (e.g., only from main)
+3. Add protection rules (optional):
+   - ✅ Required reviewers
+   - 🕐 Wait timer
+   - 🌿 Deployment branches
 
-### 3. Add Repository Secrets
+### 3. No Secrets Required!
 
-Go to **Settings** → **Secrets and variables** → **Actions**
-
-#### For S3 Testing:
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `TEST_S3_BUCKET`
-
-#### For Database Testing:
-- `DB_CONNECTION_STRING` (optional if using service container)
-
-#### For API Testing:
-- `API_KEY`
-- `API_ENDPOINT`
-
-### 4. Create Sample Application
-
-```go
-// src/main.go
-package main
-
-import (
-    "fmt"
-    "os"
-    
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/s3"
-)
-
-func main() {
-    sess := session.Must(session.NewSession())
-    svc := s3.New(sess)
-    
-    result, err := svc.ListBuckets(nil)
-    if err != nil {
-        fmt.Printf("Error: %v\n", err)
-        os.Exit(1)
-    }
-    
-    fmt.Println("Buckets:")
-    for _, bucket := range result.Buckets {
-        fmt.Printf("  %s\n", *bucket.Name)
-    }
-}
-```
-
-### 5. Create Tests
-
-```go
-// tests/integration_test.go
-// +build integration
-
-package tests
-
-import (
-    "flag"
-    "os"
-    "testing"
-)
-
-var (
-    runS3 = flag.Bool("s3", false, "Run S3 tests")
-    bucket = flag.String("bucket", os.Getenv("TEST_S3_BUCKET"), "S3 bucket")
-)
-
-func TestS3Operations(t *testing.T) {
-    if !*runS3 {
-        t.Skip("S3 tests not enabled")
-    }
-    
-    if *bucket == "" {
-        t.Fatal("TEST_S3_BUCKET not set")
-    }
-    
-    // Your test implementation
-    t.Logf("Testing with bucket: %s", *bucket)
-}
-```
+This demo uses simulated services, so no real credentials are needed. The workflows will run without any configuration.
 
 ## 📋 Usage
 
 ### Running Tests Locally
 
 ```bash
+# Run the main application (simulated services)
+go run src/main.go
+
 # Unit tests only
-go test ./...
+go test ./tests
 
-# Integration tests with S3
-go test -tags=integration ./tests -s3 -bucket=my-test-bucket
+# Integration tests with simulated storage
+go test -tags=integration ./tests -storage
 
-# With mock S3 (using MinIO)
-docker run -d -p 9000:9000 minio/minio server /data
-export AWS_ACCESS_KEY_ID=minioadmin
-export AWS_SECRET_ACCESS_KEY=minioadmin
-go test -tags=integration ./tests -s3 -endpoint=http://localhost:9000
+# Integration tests with simulated database
+go test -tags=integration ./tests -database
+
+# Integration tests with simulated API
+go test -tags=integration ./tests -api
+
+# Run all integration tests
+go test -tags=integration ./tests -storage -database -api
+
+# Run with simulated failures
+go test -tags=integration ./tests -storage -fail
+
+# Verbose output
+go test -tags=integration ./tests -storage -v
 ```
 
-### Triggering Manual Tests
+### Triggering Manual Tests via GitHub Actions
 
-1. Go to **Actions** tab
+1. Go to the **Actions** tab in your repository
 2. Select **Manual Integration Tests**
 3. Click **Run workflow**
-4. Fill in options:
-   - PR number (optional)
-   - Which tests to run
+4. Choose options:
+   - **PR number** (optional) - Test a specific PR
+   - **Storage tests** - Run simulated storage tests
+   - **Database tests** - Run simulated database tests
+   - **API tests** - Run simulated API tests
+   - **Simulate failures** - Enable random test failures
 5. Click **Run workflow**
 
-### With Environment Protection
-
-If you've configured required reviewers:
-1. Workflow starts and requests approval
-2. Designated reviewers get notified
-3. Reviewer approves in Actions tab
-4. Tests run with production credentials
+The tests will run immediately without requiring any credentials or external services!
 
 ## 🏗️ Architecture
 
 ```mermaid
 graph TD
-    A[Developer Push] --> B[CI Workflow]
-    B --> C[Unit Tests]
-    B --> D[Linting]
-    B --> E[Build]
+    A[Manual Trigger] --> B{Select Tests}
+    B -->|Storage| C[Mock S3 Tests]
+    B -->|Database| D[Mock DB Tests]
+    B -->|API| E[Mock API Tests]
     
-    F[Manual Trigger] --> G{Environment Check}
-    G -->|Staging| H[Run Tests]
-    G -->|Production| I[Request Approval]
-    I -->|Approved| H
-    I -->|Rejected| J[Stop]
+    C --> F[Simulated Operations]
+    D --> F
+    E --> F
     
-    K[Schedule] --> L[Nightly Tests]
-    L --> M[Post Results]
+    F --> G{Failure Mode?}
+    G -->|Normal| H[Tests Pass]
+    G -->|Simulate| I[Random Failures]
+    
+    H --> J[Report Results]
+    I --> J
 ```
 
-## 🔒 Security Best Practices
+## 🧪 Test Structure
 
-1. **Never commit secrets** - Use GitHub Secrets
-2. **Use environments** - Separate staging/production
-3. **Limit access** - Configure CODEOWNERS
-4. **Audit trail** - Review deployment history
-5. **Rotate credentials** - Regular secret rotation
+### Simulated Services
 
-## 📊 Test Organization
+The demo includes three types of simulated services:
 
-| Test Type | Trigger | Requires Secrets | Environment |
-|-----------|---------|------------------|-------------|
-| Unit | Every push | No | None |
-| Integration (Mock) | Every push | No | None |
-| Integration (Real) | Manual/Schedule | Yes | `integration-testing` |
-| Production | Manual only | Yes | `production-integration` |
+1. **Storage Service** (S3-like)
+   - Upload/Download operations
+   - List objects
+   - Metadata operations
+   - 1% simulated failure rate
+
+2. **Database Service** (PostgreSQL-like)
+   - Connection testing
+   - CRUD operations
+   - Transactions
+   - Performance testing
+   - 2% simulated failure rate
+
+3. **External API** (REST-like)
+   - Authentication
+   - GET/POST/PUT/DELETE
+   - Rate limiting
+   - 5% simulated failure rate
+
+### Test Flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-storage` | Run storage tests | `go test -tags=integration ./tests -storage` |
+| `-database` | Run database tests | `go test -tags=integration ./tests -database` |
+| `-api` | Run API tests | `go test -tags=integration ./tests -api` |
+| `-fail` | Simulate random failures | `go test -tags=integration ./tests -storage -fail` |
+| `-v` | Verbose output | `go test -tags=integration ./tests -storage -v` |
 
 ## 🎭 Demo Scenarios
 
-### Scenario 1: PR Testing
-1. Create feature branch
-2. Open PR
-3. Automatic tests run (unit + mock)
-4. Request manual integration tests
-5. Maintainer approves and runs
-6. Results posted to PR
+### Scenario 1: Manual Test Trigger
 
-### Scenario 2: Production Testing
-1. Select production environment
-2. Requires additional approval
-3. Uses production-like data
-4. Full test suite runs
-5. Results archived
+1. Go to Actions tab
+2. Run workflow with desired options
+3. Watch tests execute with simulated delays
+4. Review test results
+
+### Scenario 2: PR Testing
+
+1. Create a pull request
+2. Note the PR number
+3. Trigger manual tests with PR number
+4. Tests checkout PR code and run
+5. Results posted back to PR
+
+### Scenario 3: Failure Simulation
+
+1. Enable "Simulate failures" option
+2. Watch some tests randomly fail
+3. Use for testing error handling and retry logic
+
+### Scenario 4: Environment Protection Demo
+
+1. Configure environment with required approvers
+2. Trigger workflow
+3. Approval request sent
+4. Approve and watch tests run
+
+## 📊 What's Being Simulated
+
+Each test simulates realistic operations with:
+- **Response delays** - Mimics network latency
+- **Operation steps** - Shows progress through tasks
+- **Random failures** - Optional failure simulation
+- **Resource names** - Realistic service naming
+
+Example output:
+```
+=== RUN   TestStorageIntegration/Upload
+    Starting Storage Upload integration test
+    ✓ Connecting to storage service
+    ✓ Generating test file
+    ✓ Uploading file
+    ✓ Verifying upload
+    ✓ Checking file integrity
+    ✅ Storage Upload integration test passed
+--- PASS: TestStorageIntegration/Upload (0.50s)
+```
+
+## 🔧 Customization
+
+### Adjusting Failure Rates
+
+Edit `tests/integration_test.go`:
+```go
+NewMockIntegrationTest("Storage Upload", 500*time.Millisecond, 0.05) // 5% failure rate
+```
+
+### Adding New Mock Services
+
+1. Add new service configuration in `src/main.go`
+2. Create corresponding test functions in `tests/integration_test.go`
+3. Add workflow trigger option in `.github/workflows/integration-manual.yml`
+
+### Changing Response Times
+
+Modify the duration parameter:
+```go
+NewMockIntegrationTest("Quick Test", 100*time.Millisecond, 0.01)
+```
 
 ## 🐛 Troubleshooting
 
+### Tests not running
+- Ensure you're using the `-tags=integration` flag
+- Check that test flags are provided (e.g., `-storage`)
+
 ### Workflow not appearing
-- Ensure workflow file is in `.github/workflows/`
+- Verify workflow file is in `.github/workflows/`
 - Check YAML syntax
-- Verify you have Actions enabled
+- Ensure Actions are enabled in repository settings
 
-### Environment not found
-- Name must match exactly
-- Check spelling and case
+### No output from tests
+- Add `-v` flag for verbose output
+- Check test timeouts
 
-### Secrets not accessible
-- Verify secret names
-- Check environment assignment
-- Ensure approval if required
+## 📚 Key Concepts Demonstrated
 
-### PR checkout failing
-- Verify PR number is correct
-- Check repository permissions
-- Ensure PR is from same repo (not fork)
-
-## 📚 Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/actions)
-- [Environment Protection Rules](https://docs.github.com/actions/deployment/environments)
-- [workflow_dispatch Event](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch)
-- [Using Secrets](https://docs.github.com/actions/security-guides/encrypted-secrets)
+1. **Manual Workflow Triggers** - Using `workflow_dispatch`
+2. **Input Parameters** - Collecting user input for workflows
+3. **Conditional Jobs** - Running jobs based on inputs
+4. **Environment Protection** - Optional approval workflows
+5. **PR Testing** - Checking out and testing PR code
+6. **Test Organization** - Using build tags and flags
+7. **Mock Services** - Testing without external dependencies
 
 ## 🤝 Contributing
 
-This is a demo repository. Feel free to:
+This is a demo repository designed for learning. Feel free to:
 - Fork and adapt for your needs
 - Submit improvements via PR
 - Report issues
