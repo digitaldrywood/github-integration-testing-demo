@@ -74,7 +74,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binary-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/
 
   # This job runs simulated integration tests that don't require external services

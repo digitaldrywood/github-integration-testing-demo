@@ -128,7 +128,9 @@ func LoadServiceConfig() []ServiceConfig {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	// Initialize random number generator
+	// Note: As of Go 1.20, rand.Seed is deprecated and not needed
+	// The random number generator is automatically seeded
 	ctx := context.Background()
 
 	fmt.Println("=== Integration Testing Demo ===")
