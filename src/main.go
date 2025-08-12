@@ -36,14 +36,20 @@ func NewMockService(name string, responseTime time.Duration, failureRate float32
 	}
 }
 
-// Connect simulates connecting to the service
+// Connect simulates connecting to the service with retry logic
 func (m *MockService) Connect(ctx context.Context) error {
-	time.Sleep(m.responseTime)
-	if m.shouldFail() {
-		return fmt.Errorf("failed to connect to %s", m.name)
+	retries := 3
+	for i := 0; i < retries; i++ {
+		time.Sleep(m.responseTime)
+		if !m.shouldFail() {
+			fmt.Printf("✓ Connected to %s\n", m.name)
+			return nil
+		}
+		if i < retries-1 {
+			fmt.Printf("  Retry %d/%d connecting to %s...\n", i+1, retries-1, m.name)
+		}
 	}
-	fmt.Printf("✓ Connected to %s\n", m.name)
-	return nil
+	return fmt.Errorf("failed to connect to %s after %d retries", m.name, retries)
 }
 
 // Ping simulates a health check
@@ -200,4 +206,5 @@ func main() {
 	}
 
 	fmt.Println("\n=== Integration Tests Complete ===")
+	fmt.Println("\nNote: Connection logic now includes automatic retries for improved reliability!")
 }
