@@ -363,6 +363,6 @@ func TestIntegrationSuite(t *testing.T) {
 }
 
 func init() {
-	// Initialize random seed for failure simulation
-	rand.Seed(time.Now().UnixNano())
+	// Random number generator is automatically seeded in Go 1.20+
+	// No need to call rand.Seed
 }
