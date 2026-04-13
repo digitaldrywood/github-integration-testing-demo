@@ -44,7 +44,7 @@ env:
 jobs:
   setup:
     name: Setup and Validation
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, personal, prometheus]
     outputs:
       ref: ${{ steps.get-ref.outputs.ref }}
       environment: ${{ steps.get-env.outputs.environment }}
@@ -82,7 +82,7 @@ jobs:
 
   storage-integration:
     name: Storage Integration Tests (Simulated)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, personal, prometheus]
     needs: setup
     if: github.event.inputs.test_storage == 'true'
     environment: ${{ needs.setup.outputs.environment }}
@@ -120,7 +120,7 @@ jobs:
 
   database-integration:
     name: Database Integration Tests (Simulated)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, personal, prometheus]
     needs: setup
     if: github.event.inputs.test_database == 'true'
     environment: ${{ needs.setup.outputs.environment }}
@@ -158,7 +158,7 @@ jobs:
 
   api-integration:
     name: External API Integration Tests (Simulated)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, personal, prometheus]
     needs: setup
     if: github.event.inputs.test_api == 'true'
     environment: ${{ needs.setup.outputs.environment }}
@@ -196,7 +196,7 @@ jobs:
 
   summary:
     name: Test Summary
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, personal, prometheus]
     needs: [storage-integration, database-integration, api-integration]
     if: always()
     steps:
